@@ -13,6 +13,7 @@ LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 int batPin = A1;
 int adc_key_val[5] ={30, 150, 360, 535, 760 }; 
 int blPin = 10;
+int selectPin = 11;
 int pwmPin = 3;
 int ledPin = 2;
 int pwm = 0;
@@ -22,11 +23,26 @@ long interval = 1000;
 long blinkTime;
 long blinkWait; 
 
-void setup ()
+void setup (){
+
+  pinMode(selectPin, INPUT_PULLUP);
+  bool batSelector = digitalRead(selectPin);
+  if(batSelector == false) {
+    cutoff = 12.6;
+    on = 12;
+    dch = 11;
+  } else {
+    cutoff = 14.4;
+    on = 13.5;
+    dch = 12;
+  }
+
+}
 
 void chargeControl(){
   vo=analogRead(batPin);
   vo=vo*.0197; // Magic Number for Voltage Divider with "GND-33K-A1-100K-Bat"
+
 
   if(vo>cutoff){
     pwm=0;}
@@ -50,9 +66,7 @@ void dchBlink() {
   static unsigned long previousMillis = 0;
   static bool ledState = false;
   unsigned long currentMillis = millis();
-  cutoff=14.4;
-  on=13.5;
-  dch=12; //Lower than 12v = blink
+
 
   if (vo < dch) {
     int onTime = map(vo, 5, dch, 50, 2); 
@@ -109,13 +123,22 @@ void lcdInfo(){
   lcd.setCursor(6, 1);                 
   lcd.print(vo);
   lcd.print("V   ");
+
+  if(cutoff == 12.6) {
+  lcd.setCursor(14, 1);
+  lcd.print("Li");
+  } else {
+  lcd.setCursor(14, 1);
+  lcd.print("Pb");
+  }
+
 }
 
 
 void loop(){
 
 chargeControl();
-// lcdInfo();  // If you are using the LCD Keypad Shield (or any other 16x2 LCD) and want the visual feedback, uncomment this line.
+lcdInfo();  // If you are using the LCD Keypad Shield (or any other 16x2 LCD) and want the visual feedback, uncomment this line.
 dchBlink();
 delay(250);
 
